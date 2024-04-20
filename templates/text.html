@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formatted Text Submission</title>
+    <!-- Include the TinyMCE script -->
+    <script src="https://cdn.tiny.cloud/1/uox79z5fa2tu9c8gx34cxc1mbnwf6il1z6w9zmhq8aloumnk/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
+
+    <script>
+        // Initialize TinyMCE editor
+        tinymce.init({
+            selector: '#text',
+            height: 300,  // Set the height of the editor
+            plugins: 'advlist autolink lists link image charmap print preview anchor',
+            toolbar: 'bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image'
+        });
+    </script>
+</head>
+<body>
+    <h1>Submit Formatted Text</h1>
+    <form id="textForm" action="/save_text" method="POST">
+        <label for="text">Enter formatted text:</label><br>
+        <!-- Use a textarea as the target for TinyMCE editor -->
+        <textarea id="text" name="text"></textarea><br>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>

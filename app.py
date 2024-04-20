@@ -15,9 +15,11 @@ client = MongoClient('mongodb://localhost:27017/')
 db = client['mydatabase']
 tasks_collection = db['tasks']
 images_collection = db['images']
+collection = db['formatted_text_collection']
 fs = GridFS(db)
 
 
+# a simple curd 
 class TaskResource(Resource):
     def get(self, task_id=None):
         if task_id:
@@ -55,7 +57,7 @@ class TaskResource(Resource):
         
 
 
-#post image throh postman
+# post image throh postman
 # class ImageUpload(Resource):
 #     def post(self):
 #         parser = reqparse.RequestParser()
@@ -73,17 +75,17 @@ class TaskResource(Resource):
 #             return {'message': 'Image not found'}, 404
 
 
+
+# for storing and retreiving images
+@app.route('/image')
+def upload_form():
+    return render_template('image.html')
+
 class ImageUpload(Resource):
     def post(self):
-        # Get the image file from the request
         image_file = request.files['image']
-        
-        # Save image to GridFS
         image_id = fs.put(image_file)
-        
-        # Save metadata to a regular MongoDB collection
         images_collection.insert_one({'_id': image_id, 'filename': image_file.filename})
-        
         return {'message': 'Image uploaded successfully', 'image_id': str(image_id)}
 class Image(Resource):
     def get(self, image_id):
@@ -93,9 +95,6 @@ class Image(Resource):
         except gridfs_errors.NoFile:
             return {'error': 'Image not found'}, 404
 
-@app.route('/')
-def upload_form():
-    return render_template('image.html')
 
 api.add_resource(TaskResource, '/tasks', '/tasks/<string:task_id>')
 # api.add_resource(ImageView, '/images/<string:image_id>')
@@ -103,6 +102,51 @@ api.add_resource(TaskResource, '/tasks', '/tasks/<string:task_id>')
 api.add_resource(ImageUpload, '/upload')
 api.add_resource(Image, '/image/<string:image_id>')
 
+
+
+
+
+# to add forammetedtext
+@app.route('/')
+def indexs():
+    return render_template('text.html')
+
+
+@app.route('/save_text', methods=['POST'])
+def save_text():
+    if request.method == 'POST':
+        text = request.form.get('text')  
+        print("Received text:", text)   
+        if text is not None:
+            print(text,'inside if ')
+            inserted_text = collection.insert_one({'text': text})
+            print("Inserted text ID:", inserted_text.inserted_id)   
+            if inserted_text.inserted_id:
+                return jsonify({'message': 'Text saved successfully'})
+            else:
+                return jsonify({'error': 'Failed to save text'}), 500
+        else:
+            return jsonify({'error': 'No text provided'}), 400
+    else:
+        return jsonify({'error': 'Method Not Allowed'}), 405
+
+
+
+from bson import ObjectId
+@app.route('/get_text/<text_id>', methods=['GET'])
+def get_text(text_id):
+    # Convert text_id to ObjectId
+    try:
+        object_id = ObjectId(text_id)
+    except:
+        return jsonify({'error': 'Invalid text ID format'}), 400
+
+    stored_text = collection.find_one({'_id': object_id})
+    if stored_text:
+        print(stored_text)
+        return render_template('dispaly.html',stored_text=stored_text)
+    else:
+        return jsonify({'message': 'No text found for the given ID'}), 404
 
 
 if __name__ == '__main__':
